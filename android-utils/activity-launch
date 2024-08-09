@@ -26,8 +26,10 @@ _root_requirements() {
 
 # shellcheck disable=SC2034
 _global_variables() {
+  launch_date=""
   target_app=""
   target_activity=""
+  launch_mode=""
   color=""
   quiet=""
 }
@@ -36,6 +38,7 @@ _activity_launch() {
   local \
     _app="${1}" \
     _activity="${2}" \
+    _mode="${3}" \
     _cmd=()
   _cmd=(
     am
@@ -51,6 +54,14 @@ _activity_launch() {
 }
 
 _set_overrides() {
+  _set_override \
+    "launch" \
+    "date" \
+    "$(_get_date_human)"
+  _set_override \
+    "launch" \
+    "mode" \
+    "root"
   if [[ -v override_color ]]; then
     color="${override_color}"
   elif [[ -z "${color}" ]]; then
@@ -61,6 +72,13 @@ _set_overrides() {
   elif [[ -z "${quiet}" ]]; then
     quiet="y"
   fi
+}
+
+# Shows configuration options.
+_show_config() {
+  _msg_info "${app_name} configuration"
+  _msg_info "              Launch date:   $(_get "launch" "date")"
+  _msg_info "              Launch mode:   $(_get "launch" "mode")"
 }
 
 # Show help usage, with an exit status.
@@ -83,6 +101,8 @@ Usage:
     <app>
     <activity>
   options:
+     -m <mode>            How to switch activity
+                          Default: $(_get "launch" "mode")
      -h                   This message.
      -v                   Enable verbose output
 ENDUSAGETEXT
@@ -99,10 +119,11 @@ _global_variables
 # shellcheck disable=SC2034
 while \
   getopts \
-    'cvh?' \
+    'm:cvh?' \
     arg; do
   case \
     "${arg}" in
+    m) override_launch_mode="${OPTARG}" ;;
     c) override_color="y" ;;
     v) override_quiet="n" ;;
     h|?) _set_overrides && \
@@ -134,12 +155,19 @@ _set \
   "activity" \
   "${2}"
 _set_overrides
-_activity_launch \
+app_opts=(
   "$(_get \
        "target" \
-       "app")" \
+       "app")"
   "$(_get \
        "target" \
        "activity")"
+  "$(_get \
+       "launch" \
+       "mode")"
+)
+_show_config
+_activity_launch \
+  "${app_opts[@]}"
 
 # vim:set sw=2 sts=-1 et:
