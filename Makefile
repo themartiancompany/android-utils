@@ -20,6 +20,7 @@ install: install-scripts install-doc
 install-scripts:
 
 	install -vDm 755 android-utils/activity-launch "$(BIN_DIR)/activity-launch"
+	install -vDm 755 android-utils/get-activity-focused "$(BIN_DIR)/get-activity-focused"
 
 install-doc:
 
