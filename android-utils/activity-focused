@@ -32,11 +32,24 @@ _global_variables() {
   quiet=""
 }
 
-_activity_focused() {
+_root_get() {
   local \
-    _mode="${1}" \
-    _cmd=() \
-    _activities
+    _sdk
+  _sdk="$( \
+    sdk-version)"
+  if (( 32 < "${_sdk}" )); then
+    _cmd=(
+      "/system/bin/dumpsys"
+        "activity"
+        "activities"
+    )
+  elif (( "${_sdk}" < 28 )); then
+    _cmd=(
+      "/system/bin/dumpsys"
+        "window"
+        "windows"
+    )
+  fi
   _cmd=(
     "/system/bin/dumpsys"
       "activity"
@@ -59,6 +72,14 @@ _activity_focused() {
             '{print $1}')"
   echo \
     "${_activity}"
+}
+
+_activity_focused() {
+  local \
+    _mode="${1}" \
+    _cmd=() \
+    _activities
+  "_${_mode}_get"
 }
 
 _auto_detect_mode() {
