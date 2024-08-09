@@ -49,12 +49,13 @@ _root_get() {
         "window"
         "windows"
     )
+  else
+    _cmd=(
+      "/system/bin/dumpsys"
+        "window"
+        "windows"
+    )
   fi
-  _cmd=(
-    "/system/bin/dumpsys"
-      "activity"
-      "activities"
-  )
   _activities="$( \
     su \
       -c \
@@ -162,11 +163,12 @@ _global_variables
 # shellcheck disable=SC2034
 while \
   getopts \
-    'cvh?' \
+    'm:a:cvh?' \
     arg; do
   case \
     "${arg}" in
     m) override_get_mode="${OPTARG}" ;;
+    a) override_sdk_version="${OPTARG}" ;;
     c) override_color="y" ;;
     v) override_quiet="n" ;;
     h|?) _set_overrides && \
