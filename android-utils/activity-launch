@@ -48,9 +48,8 @@ _activity_launch() {
         -n 
           "${_app}/.${_activity}"
   )
-  su \
-    -c \
-    "${_cmd[*]}"
+  sudo \
+    "${_cmd[@]}"
 }
 
 _set_overrides() {
