@@ -35,20 +35,30 @@ _global_variables() {
 _activity_focused() {
   local \
     _mode="${1}" \
-    _cmd=()
+    _cmd=() \
+    _activities
   _cmd=(
-    "/system/bin/dumsys"
-      "window"
-    # am
-    #   start
-    #     -a 
-    #       android.intent.action.MAIN
-    #     -n 
-    #       "${_app}/.${_activity}"
+    "/system/bin/dumpsys"
+      "activity"
+      "activities"
   )
-  su \
-    -c \
-    "${_cmd[*]}"
+  _activities="$( \
+    su \
+      -c \
+      "${_cmd[*]}")"
+  _activity="$( \
+    echo \
+      "${_activities}" | \
+      grep \
+        "mCurrentFocus" | \
+        awk \
+          '{print $3}' | \
+          awk \
+            -F \
+              '}' \
+            '{print $1}')"
+  echo \
+    "${_activity}"
 }
 
 _auto_detect_mode() {
