@@ -48,7 +48,7 @@ _activity_launch() {
         -n 
           "${_app}/.${_activity}"
   )
-  sudo \
+  su -c \
     "${_cmd[@]}"
 }
 
