@@ -38,8 +38,9 @@ _app_installed() {
     _target="${1}" \
     _mode="${2}" \
     _cmd=() \
+    _pkg \
     _app \
-    _apps=()
+    _apps=() 
   _cmd=(
     pm
       list
@@ -50,7 +51,8 @@ _app_installed() {
       -c \
       "${_cmd[@]}")
   )
-  for _app in "${_apps[@]}"; do
+  for _pkg in "${_apps[@]}"; do
+    _app="${_pkg#package:*}"
     if [[ "${_app}" == "${_target}" ]]; then
       echo \
         'true'
