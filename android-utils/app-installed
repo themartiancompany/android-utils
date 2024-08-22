@@ -26,39 +26,49 @@ _root_requirements() {
 
 # shellcheck disable=SC2034
 _global_variables() {
-  launch_date=""
+  get_date=""
   target_app=""
-  target_activity=""
-  launch_mode=""
+  get_mode=""
   color=""
   quiet=""
 }
 
 _activity_launch() {
   local \
-    _app="${1}" \
-    _activity="${2}" \
-    _mode="${3}" \
-    _cmd=()
+    _target="${1}" \
+    _mode="${2}" \
+    _cmd=() \
+    _app \
+    _apps=()
   _cmd=(
-    am
-      start
-        -a 
-          android.intent.action.MAIN
-        -n 
-          "${_app}/.${_activity}"
+    pm
+      list
+      packages
   )
-  su -c \
-    "${_cmd[@]}"
+  _apps=( $( \
+    su \
+      -c \
+      "${_cmd[@]}")
+  )
+  for _app in "${_apps[@]}"; do
+    if "${_app}" == "${_target}"; then
+      echo \
+        'true'
+      return \
+        0
+    fi
+  done
+  echo \
+    'false'
 }
 
 _set_overrides() {
   _set_override \
-    "launch" \
+    "get" \
     "date" \
     "$(_get_date_human)"
   _set_override \
-    "launch" \
+    "get" \
     "mode" \
     "root"
   if [[ -v override_color ]]; then
@@ -76,10 +86,9 @@ _set_overrides() {
 # Shows configuration options.
 _show_config() {
   _msg_info "${app_name} configuration"
-  _msg_info "              Launch date:   $(_get "launch" "date")"
-  _msg_info "              Launch mode:   $(_get "launch" "mode")"
+  _msg_info "                 Get date:   $(_get "get" "date")"
+  _msg_info "                 Get mode:   $(_get "get" "mode")"
   _msg_info "                      App:   $(_get "target" "app")"
-  _msg_info "                 Activity:   $(_get "target" "activity")"
 }
 
 # Show help usage, with an exit status.
@@ -94,16 +103,15 @@ _usage() {
       _usage_text << \
         ENDUSAGETEXT || true
 
-Launch an android activity
+Check if an Android application is installed.
 
 Usage:
   $(_get "app" "name")
     [options]
     <app>
-    <activity>
   options:
-     -m <mode>            How to switch activity
-                          Default: $(_get "launch" "mode")
+     -m <mode>            How to get installed apps.
+                          Default: $(_get "get" "mode")
      -h                   This message.
      -v                   Enable verbose output
 ENDUSAGETEXT
@@ -124,7 +132,7 @@ while \
     arg; do
   case \
     "${arg}" in
-    m) override_launch_mode="${OPTARG}" ;;
+    m) override_get_mode="${OPTARG}" ;;
     c) override_color="y" ;;
     v) override_quiet="n" ;;
     h|?) _set_overrides && \
@@ -144,31 +152,24 @@ shift \
   $(( \
     OPTIND - 1 \
   ))
-(( $# <= 1 )) && \
+(( $# < 1 )) && \
   _usage \
     1
 _set \
   "target" \
   "app" \
   "${1}"
-_set \
-  "target" \
-  "activity" \
-  "${2}"
 _set_overrides
 app_opts=(
   "$(_get \
        "target" \
        "app")"
   "$(_get \
-       "target" \
-       "activity")"
-  "$(_get \
-       "launch" \
+       "get" \
        "mode")"
 )
 _show_config
-_activity_launch \
+_app_installed \
   "${app_opts[@]}"
 
 # vim:set sw=2 sts=-1 et:
