@@ -47,9 +47,7 @@ _path_get() {
       -c \
       "${_cmd[*]}" || \
     true)"
-  echo \
-    "${_exists}"
-  if [[ "${_exists}" != "" ]]; then
+  if [[ "${_exists}" == "package:"* ]]; then
     _msg_info \
       "Found ${_target}"
     echo \
