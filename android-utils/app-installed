@@ -33,7 +33,7 @@ _global_variables() {
   quiet=""
 }
 
-_activity_launch() {
+_app_installed() {
   local \
     _target="${1}" \
     _mode="${2}" \
@@ -51,7 +51,7 @@ _activity_launch() {
       "${_cmd[@]}")
   )
   for _app in "${_apps[@]}"; do
-    if "${_app}" == "${_target}"; then
+    if [[ "${_app}" == "${_target}" ]]; then
       echo \
         'true'
       return \
