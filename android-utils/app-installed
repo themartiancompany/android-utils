@@ -33,25 +33,51 @@ _global_variables() {
   quiet=""
 }
 
-_app_installed() {
+_path_get() {
   local \
-    _target="${1}" \
-    _mode="${2}" \
+    _cmd=() \
+    _exists
+  _cmd=(
+    pm
+      path
+      "${_target}"
+  )
+  _exists="$( \
+    su \
+      -c \
+      "${_cmd[*]}" || \
+    true)"
+  echo \
+    "${_exists}"
+  if [[ "${_exists}" != "" ]]; then
+    _msg_info \
+      "Found ${_target}"
+    echo \
+      'true'
+  elif [[ "${_exists}" == "" ]]; then
+    _msg_info \
+      "Not found ${_target}"
+    echo \
+      'false'
+  fi
+}
+
+_list_get(){
+  local \
     _cmd=() \
     _pkg \
-    _app \
-    _apps=() 
+    _pkgs=()
   _cmd=(
     pm
       list
       packages
   )
-  _apps=( $( \
+  _pkgs=( $( \
     su \
       -c \
       "${_cmd[@]}")
   )
-  for _pkg in "${_apps[@]}"; do
+  for _pkg in "${_pkgs[@]}"; do
     _app="${_pkg#package:*}"
     if [[ "${_app}" == "${_target}" ]]; then
       echo \
@@ -64,6 +90,34 @@ _app_installed() {
     'false'
 }
 
+_mode_auto_detect(){
+  local \
+    _sdk \
+    _cmd
+  _sdk="$( \
+    sdk-version)"
+  if (( 32 < "${_sdk}" )); then
+    _cmd="list"
+  elif (( "${_sdk}" < 28 )); then
+    _cmd="path"
+  else
+    _cmd="path"
+  fi
+  echo \
+    "${_cmd}"
+}
+
+_app_installed() {
+  local \
+    _target="${1}" \
+    _mode="${2}" \
+    _cmd=() \
+    _pkg \
+    _app \
+    _apps=() 
+  "_${_mode}_get"
+}
+
 _set_overrides() {
   _set_override \
     "get" \
@@ -72,7 +126,7 @@ _set_overrides() {
   _set_override \
     "get" \
     "mode" \
-    "root"
+    "$(_mode_auto_detect)"
   if [[ -v override_color ]]; then
     color="${override_color}"
   elif [[ -z "${color}" ]]; then
