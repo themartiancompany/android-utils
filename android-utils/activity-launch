@@ -2,12 +2,6 @@
 #
 # SPDX-License-Identifier: AGPL-3.0
 
-# I don't remember why
-# I had this shebang
-# so let's have it just in case
-# until next test
-#!/data/data/com.termux/files/usr/bin/env bash
-
 _bin="$( \
   dirname \
     "$( \
@@ -54,6 +48,29 @@ _focus_check() {
       "${_target_activity}"
   fi
 } 
+
+_display_dim_check() {
+  local \
+    _current_brightness
+  _current_brightness="$( \
+    bbrightnessctl \
+      "${_bbrightnessctl_opts[@]}" \
+      -m \
+        root \
+      get || \
+      true)"
+  if \
+    [ 1 -le "${_current_brightness}" ] ; then
+    _msg_info \
+      "Current brightness: ${_current_brightness}"
+    bbrightnessctl \
+      -m \
+        root \
+      set \
+        0 || \
+      true
+  fi
+}
 
 _touch_disabled_check_in() {
   local \
@@ -158,30 +175,6 @@ _service() {
   _display_dim_check_out
 }
 
-_display_dim_check() {
-  local \
-    _current_brightness
-  _current_brightness="$( \
-    bbrightnessctl \
-      "${_bbrightnessctl_opts[@]}" \
-      -m \
-        root \
-      get || \
-      true)"
-  if \
-    [ 1 -le "${_current_brightness}" ] ; then
-    _msg_info \
-      "Current brightness: ${_current_brightness}"
-    bbrightnessctl \
-      -m \
-        root \
-      set \
-        0 || \
-      true
-  fi
-}
-
-
 _activity_launch_cmd() {
   local \
     _activity="${1}" \
@@ -243,6 +236,14 @@ _set_overrides() {
     "touch" \
     "disabled" \
     "n"
+  if [[ "${display_dim}" == "true" ]]; then
+    _check_cmd \
+      "bbrightnessctl" \
+      "bbrightnessctl"
+    _check_cmd \
+      "display-status"
+      "android-utils"
+  fi
   if [[ -v override_color ]]; then
     color="${override_color}"
   elif [[ -z "${color}" ]]; then
