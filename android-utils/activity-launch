@@ -32,6 +32,8 @@ _global_variables() {
   launch_mode=""
   focus_length=""
   focus_poll=""
+  display_dim=""
+  touch_disabled=""
   color=""
   quiet=""
 }
@@ -53,21 +55,51 @@ _focus_check() {
   fi
 } 
 
-_focus_service() {
+_service() {
   local \
     _length="${1}" \
     _poll="${2}" \
+    _dim="${3}" \
+    _touch_disabled="${4}" \
     _time=0 \
     _current_activity
   while \
     (( "${_time}" < "${_length}" )); do
     _focus_check
+    if [[ "${_dim}" == "y" ]]; then
+      _brightness_check
+    fi
     sleep \
       "${_poll}"
     _time="$(( \
       _time + _poll ))"
   done
 }
+
+_brightness_check() {
+  local \
+    _current_brightness
+  _current_brightness="$( \
+    bbrightnessctl \
+      "${_bbrightnessctl_opts[@]}" \
+      -m \
+        root \
+      get || \
+      true)"
+  if \
+    [ 1 -le "${_current_brightness}" ] ; then
+    _msg_info \
+      "Current brightness: ${_current_brightness}"
+    bbrightnessctl \
+      -m \
+        root \
+      set \
+        0 || \
+      true
+  fi
+}
+
+
 _activity_launch_cmd() {
   local \
     _activity="${1}" \
@@ -90,11 +122,15 @@ _activity_launch() {
     _activity="${2}" \
     _mode="${3}" \
     _length="${4}" \
-    _poll="${5}"
+    _poll="${5}" \
+    _dim="${6}" \
+    _touch_disabled="${7}"
   if (( 0 < "${_length}" )); then
-    _focus_service \
+    _service \
       "${_length}" \
-      "${_poll}"
+      "${_poll}" \
+      "${_dim}" \
+      "${_touch_disabled}"
   fi
   _activity_launch_cmd \
     "${_app}/.${_activity}"
@@ -117,6 +153,14 @@ _set_overrides() {
     "focus" \
     "poll" \
     "30"
+  _set_override \
+    "display" \
+    "dim" \
+    "n"
+  _set_override \
+    "touch" \
+    "disabled" \
+    "n"
   if [[ -v override_color ]]; then
     color="${override_color}"
   elif [[ -z "${color}" ]]; then
@@ -138,6 +182,8 @@ _show_config() {
   _msg_info "                 Activity:   $(_get "target" "activity")"
   _msg_info "             Focus length:   $(_get "focus" "length")"
   _msg_info "               Focus poll:   $(_get "focus" "poll")"
+  _msg_info "              Display dim:   $(_get "display" "dim")"
+  _msg_info "           Touch disabled:   $(_get "touch" "disabled")"
 }
 
 # Show help usage, with an exit status.
@@ -166,6 +212,10 @@ Usage:
                           Default: $(_get "focus" "length")
      -p <poll>            Time interval between focus checks
                           Default: $(_get "focus" "poll")
+     -d                   Dim the display.
+                          Default: $(_get "display" "dim")
+     -t                   Disable the touchscreen.
+                          Default: $(_get "touch" "disabled")
 
      -h                   This message.
      -v                   Enable verbose output
@@ -183,13 +233,15 @@ _global_variables
 # shellcheck disable=SC2034
 while \
   getopts \
-    'm:L:p:cvh?' \
+    'm:L:p:dtcvh?' \
     arg; do
   case \
     "${arg}" in
     m) override_launch_mode="${OPTARG}" ;;
     L) override_focus_length="${OPTARG}" ;;
     p) override_focus_poll="${OPTARG}" ;;
+    d) override_display_dim="y" ;;
+    t) override_touch_disabled="y" ;;
     c) override_color="y" ;;
     v) override_quiet="n" ;;
     h|?) _set_overrides && \
@@ -237,6 +289,12 @@ app_opts=(
   "$(_get \
        "focus" \
        "poll")"
+  "$(_get \
+       "display" \
+       "dim")"
+  "$(_get \
+       "touch" \
+       "disabled")"
 )
 _show_config
 _activity_launch \
