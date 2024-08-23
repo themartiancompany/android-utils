@@ -22,7 +22,6 @@ install-scripts:
 	install -vDm 755 android-utils/activity-launch "$(BIN_DIR)/activity-launch"
 	install -vDm 755 android-utils/activity-focused "$(BIN_DIR)/activity-focused"
 	install -vDm 755 android-utils/app-installed "$(BIN_DIR)/app-installed"
-	install -vDm 755 android-utils/display-status "$(BIN_DIR)/display-status"
 	install -vDm 755 android-utils/sdk-version "$(BIN_DIR)/sdk-version"
 
 install-doc:
