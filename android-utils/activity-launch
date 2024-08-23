@@ -30,15 +30,47 @@ _global_variables() {
   target_app=""
   target_activity=""
   launch_mode=""
+  focus_length=""
+  focus_poll=""
   color=""
   quiet=""
 }
 
-_activity_launch() {
+_focus_check() {
   local \
-    _app="${1}" \
-    _activity="${2}" \
-    _mode="${3}" \
+    _current_activity \
+    _target_activity
+  _current_activity="$( \
+    activity-focused)"
+  _target_activity="${_app}/${_app}.${_activity}"
+  if [[ "${_current_activity}" != "${_target_activity}" ]]; then
+    _msg_info \
+      "Current activity: ${_current_activity}"
+    _msg_info \
+      "Target activity: ${_target_activity}"
+    _activity_launch_cmd \
+      "${_target_activity}"
+  fi
+} 
+
+_focus_service() {
+  local \
+    _length="${1}" \
+    _poll="${2}" \
+    _time=0 \
+    _current_activity
+  while \
+    (( "${_time}" < "${_length}" )); do
+    _focus_check
+    sleep \
+      "${_poll}"
+    _time="$(( \
+      _time + _poll ))"
+  done
+}
+_activity_launch_cmd() {
+  local \
+    _activity="${1}" \
     _cmd=()
   _cmd=(
     am
@@ -46,10 +78,26 @@ _activity_launch() {
         -a 
           android.intent.action.MAIN
         -n 
-          "${_app}/.${_activity}"
+          "${_activity}"
   )
   su -c \
     "${_cmd[@]}"
+}
+
+_activity_launch() {
+  local \
+    _app="${1}" \
+    _activity="${2}" \
+    _mode="${3}" \
+    _length="${4}" \
+    _poll="${5}"
+  if (( 0 < "${_length}" )); then
+    _focus_service \
+      "${_length}" \
+      "${_poll}"
+  fi
+  _activity_launch_cmd \
+    "${_app}/.${_activity}"
 }
 
 _set_overrides() {
@@ -61,6 +109,14 @@ _set_overrides() {
     "launch" \
     "mode" \
     "root"
+  _set_override \
+    "focus" \
+    "length" \
+    "0"
+  _set_override \
+    "focus" \
+    "poll" \
+    "30"
   if [[ -v override_color ]]; then
     color="${override_color}"
   elif [[ -z "${color}" ]]; then
@@ -80,6 +136,8 @@ _show_config() {
   _msg_info "              Launch mode:   $(_get "launch" "mode")"
   _msg_info "                      App:   $(_get "target" "app")"
   _msg_info "                 Activity:   $(_get "target" "activity")"
+  _msg_info "             Focus length:   $(_get "focus" "length")"
+  _msg_info "               Focus poll:   $(_get "focus" "poll")"
 }
 
 # Show help usage, with an exit status.
@@ -104,6 +162,11 @@ Usage:
   options:
      -m <mode>            How to switch activity
                           Default: $(_get "launch" "mode")
+     -L <length>          For how much time keep focus
+                          Default: $(_get "focus" "length")
+     -p <poll>            Time interval between focus checks
+                          Default: $(_get "focus" "poll")
+
      -h                   This message.
      -v                   Enable verbose output
 ENDUSAGETEXT
@@ -120,11 +183,13 @@ _global_variables
 # shellcheck disable=SC2034
 while \
   getopts \
-    'm:cvh?' \
+    'm:L:p:cvh?' \
     arg; do
   case \
     "${arg}" in
     m) override_launch_mode="${OPTARG}" ;;
+    L) override_focus_length="${OPTARG}" ;;
+    p) override_focus_poll="${OPTARG}" ;;
     c) override_color="y" ;;
     v) override_quiet="n" ;;
     h|?) _set_overrides && \
@@ -166,6 +231,12 @@ app_opts=(
   "$(_get \
        "launch" \
        "mode")"
+  "$(_get \
+       "focus" \
+       "length")"
+  "$(_get \
+       "focus" \
+       "poll")"
 )
 _show_config
 _activity_launch \
