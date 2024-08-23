@@ -55,6 +55,72 @@ _focus_check() {
   fi
 } 
 
+_touch_disabled_check_in() {
+  local \
+    _touch_status
+  if [[ "${_touch_disabled}" == "y" ]]; then
+    _touch_status="$( \
+      touchctl \
+        status || \
+        true)"
+    if [[ "${_touch_status}" == "enabled" ]]; then
+      _msg_info \
+        "Disabling touch input"
+      touchctl \
+        "${_touchctl_opts[@]}" \
+        disable || \
+      true
+    fi || \
+      true
+  fi || \
+    true
+}
+
+_display_dim_check_in(){
+  if [[ "${_dim}" == "y" ]]; then
+    _previous_brightness="$( \
+      bbrightnessctl \
+        "${_bbrightnessctl_opts[@]}" \
+        -m \
+          root \
+        get || \
+        true)"
+  fi
+}
+
+_display_dim_check_out() {
+  if [[ "${_dim}" == "y" ]]; then
+    bbrightnessctl \
+      -m \
+        root \
+      set \
+        "${_previous_brightness}" || \
+      true
+  fi
+}
+
+_touch_disabled_check_out() {
+  local \
+    _touch_status
+  if \
+    [[ "${_touch_disabled}" == "y" ]]; then
+    _touch_status="$( \
+      touchctl \
+        status)"
+    if \
+      [[ "${_touch_status}" == "disabled" ]]; then
+      _msg_info \
+        "Re-enabling touch input"
+      touchctl \
+        "${_touchctl_opts[@]}" \
+        enable || \
+      true
+    fi || \
+      true
+  fi || \
+    true
+}
+
 _service() {
   local \
     _length="${1}" \
@@ -62,21 +128,37 @@ _service() {
     _dim="${3}" \
     _touch_disabled="${4}" \
     _time=0 \
-    _current_activity
+    _current_activity \
+    _previous_brightness
+  if [[ "quiet" != "y" ]]; then
+    _bbrightnessctl_opts+=(
+      -v
+    )
+    _touchctl_opts+=(
+      -v
+    )
+    _viewer_app_opts+=(
+      -v
+    )
+  fi
+  _touch_disabled_check_in
+  _display_dim_check_in
   while \
     (( "${_time}" < "${_length}" )); do
     _focus_check
     if [[ "${_dim}" == "y" ]]; then
-      _brightness_check
+      _display_dim_check
     fi
     sleep \
       "${_poll}"
     _time="$(( \
       _time + _poll ))"
   done
+  _touch_disabled_check_out
+  _display_dim_check_out
 }
 
-_brightness_check() {
+_display_dim_check() {
   local \
     _current_brightness
   _current_brightness="$( \
