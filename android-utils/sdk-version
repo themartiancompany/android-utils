@@ -1,23 +1,38 @@
 #!/usr/bin/env bash
-#
-# SPDX-License-Identifier: AGPL-3.0
 
-# I don't remember why
-# I had this shebang
-# so let's have it just in case
-# until next test
-#!/data/data/com.termux/files/usr/bin/env bash
+#    ----------------------------------------------------------------------
+#    Copyright © 2024, 2025  Pellegrino Prevete
+#
+#    All rights reserved
+#    ----------------------------------------------------------------------
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU Affero General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU Affero General Public License for more details.
+#
+#    You should have received a copy of the GNU Affero General Public License
+#    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 _bin="$( \
   dirname \
     "$( \
       command \
         -v \
-	  "env")")"
-_lib="${_bin}/../lib"
-_share="${_bin}/../share"
-source \
-  "${_lib}/libcrash-bash/crash-bash"
+        "env")")"
+_lib="$( \
+  realpath \
+    "${_bin}/../lib")"
+_crash_bash="${_lib}/libcrash-bash/crash-bash"
+_sourced \
+  "${_crash_bash}" 2>/dev/null || \
+  source \
+    "${_crash_bash}"
 
 _root_requirements() {
   _check_cmd \
@@ -60,7 +75,8 @@ _sdk_version() {
 
 _auto_detect_mode() {
   local \
-    _os
+    _os \
+    _msg=()
   _os="$( \
     uname \
       -o)"
@@ -69,8 +85,14 @@ _auto_detect_mode() {
     echo \
       "root"
   elif [[ "${_os}" == "GNU/Linux" ]]; then
+    _msg=(
+      "Not implemented."
+      "Something with xdotool"
+      "needs to be written."
+    )
     _msg_error \
-      "not implemented. something with xdotool needs to be written"
+      "${_msg[*]}" \
+      1
   fi
 }
 
@@ -98,8 +120,8 @@ _set_overrides() {
 # Shows configuration options.
 _show_config() {
   _msg_info "${app_name} configuration"
-  _msg_info "     Got activity at date:   $(_get "get" "date")"
-  _msg_info "                 Get mode:   $(_get "get" "mode")"
+  _msg_info "     Got activity at date:   ${get_date}"
+  _msg_info "                 Get mode:   ${get_mode}"
 }
 
 # Show help usage, with an exit status.
@@ -114,14 +136,15 @@ _usage() {
       _usage_text << \
         ENDUSAGETEXT || true
 
-Get currently focused Android activity
+Returns Android SDK version.
 
 Usage:
-  $(_get "app" "name")
+  ${app_name}
     [options]
+
   options:
      -m <method>          Method to obtain activity name.
-                          Default: $(_get "get" "mode")
+                          Default: ${get_mode}
      -h                   This message.
      -v                   Enable verbose output
 ENDUSAGETEXT
@@ -164,9 +187,7 @@ shift \
   ))
 _set_overrides
 app_opts=(
-  "$(_get \
-       "get" \
-       "mode")"
+  "${get_mode}"
 )
 _show_config
 _sdk_version \
