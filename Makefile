@@ -26,10 +26,6 @@ install-scripts:
 
 	install \
 	  -vDm755 \
-	  "$(_PROJECT)/app-installed \
-	  "$(BIN_DIR)/app-installed"
-	install \
-	  -vDm755 \
 	  "$(_PROJECT)/sdk-version" \
 	  "$(BIN_DIR)/sdk-version"
 
