@@ -21,12 +21,12 @@
 [comment]: <> (General Public License along with this program.)
 [comment]: <> (If not, see <https://www.gnu.org/licenses/>.)
 
-# Android Utils (`android-utils`)
+# Android Utilities (`android-utils`)
 
 A collection of utilities to easily manage various Android
 settings and retrieve information about the system.
 
-It uses the
+The programs depend on the
 [Crash Bash](
   https://github.com/themartiancompany/crash-bash)
 library.

@@ -26,22 +26,20 @@
 #    along with this program.
 #    If not, see <https://www.gnu.org/licenses/>.
 
-# I don't remember why
-# I had this shebang
-# so let's have it just in case
-# until next test
-#!/data/data/com.termux/files/usr/bin/env bash
 
 _bin="$(
   dirname \
     "$(command \
          -v \
 	 "env")")"
-_lib="${_bin}/../lib"
-_share="${_bin}/../share"
+_lib="$( \
+  realpath \
+    "${_bin}/../lib")"
 _crash_bash="${_lib}/libcrash-bash/crash-bash"
-source \
-  "${_crash_bash}"
+_sourced \
+  "${_crash_bash}" 2>/dev/null || \
+  source \
+    "${_crash_bash}"
 
 _root_requirements() {
   _check_cmd \
@@ -84,7 +82,7 @@ _sdk_version() {
 
 _auto_detect_mode() {
   local \
-    _msg=()
+    _msg=() \
     _os
   _os="$( \
     uname \
@@ -146,11 +144,12 @@ _usage() {
       _usage_text << \
         ENDUSAGETEXT || true
 
-Get currently focused Android activity
+Returns Android SDK version.
 
 Usage:
-  $(_get "app" "name")
+  ${app_name}
     [options]
+
   options:
      -m <method>          Method to obtain activity name.
                           Default: ${get_mode}
@@ -182,8 +181,11 @@ while \
       _usage \
         0 ;;
     *)
+      _msg=(
+        "Invalid argument '${arg}'."
+      )
       _msg_error \
-        "Invalid argument '${arg}'" \
+        "${_msg[*]}" \
         0
       _set_overrides
       _usage \
